@@ -1,0 +1,43 @@
+# GitHub Actions Workflow Configuration for C++ Continuous Integration (CI)
+
+name: C++ CI  # The name of the workflow that will appear in the GitHub Actions tab
+
+on:
+  push:
+    branches: [ "main" ]  # Trigger the workflow when code is pushed to the 'main' branch
+  pull_request:
+    branches: [ "main" ]  # Also trigger the workflow for pull requests targeting the 'main' branch
+
+jobs:
+  build_and_test:  # Defines a job named 'build_and_test'
+    runs-on: ubuntu-latest  # The job will run on the latest available version of Ubuntu
+
+    steps:
+    # Step 1: Checkout the code from the repository
+    - name: Checkout repository
+      uses: actions/checkout@v3  # Uses the official GitHub Action to clone the repository
+
+    # Step 2: Install necessary dependencies (build tools, CMake, and Google Test)
+    - name: Install dependencies
+      run: |
+        sudo apt-get update  # Update the package index
+        sudo apt-get install -y build-essential cmake libgtest-dev  # Install build tools, CMake, and Google Test development files
+        cd /usr/src/gtest  # Navigate to the source directory of Google Test
+        sudo cmake .  # Configure the build for Google Test
+        sudo make  # Build the Google Test static libraries
+        sudo mv lib/*.a /usr/lib  # Move the compiled static libraries to the system library path
+
+    # Step 3: Run CMake to configure the project and generate build files
+    - name: Configure CMake
+      run: cmake -B build -S .  # Create a build directory and configure the project from the source
+
+    # Step 4: Build the project using the generated build files
+    - name: Build project
+      run: cmake --build build  # Build the project from the 'build' directory
+
+    # Step 5: Run the test suite and display output if any test fails
+    - name: Run tests
+      run: |
+        cd build  # Change to the build directory
+        ctest --output-on-failure  # Run tests and show detailed output on failure
+        
